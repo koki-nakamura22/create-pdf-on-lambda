@@ -1,0 +1,56 @@
+service: creating-pdf-on-lambda
+
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: python3.8
+  region: ap-northeast-1
+  stage: dev
+  environment:
+    S3_BUCKET_NAME: ${file(./config.yml):BucketName}
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "s3:*"
+      Resource:
+        - arn:aws:s3:::${file(./config.yml):BucketName}
+        - arn:aws:s3:::${file(./config.yml):BucketName}/*
+
+package:
+  individually: true
+  exclude:
+    - .serverless/**
+    - .venv/**
+    - node_modules/**
+    - README.md
+
+functions:
+  generate_pdf:
+    handler: handler.generate_pdf
+    layers:
+      - arn:aws:lambda:ap-northeast-1:xxxxxxxxxxx:layer:wkhtmltox:1
+    events:
+      - http:
+          path: new-pdf
+          method: post
+          cors: true
+    # package:
+    #   include:
+    #     - "handler.py"
+    #     - "binary"
+
+resources:
+  # Creates an S3 bucket in our AWS account
+  Resources:
+    NewResource:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${file(./config.yml):BucketName}
+
+custom:
+  pythonRequirements:
+    dockerizePip: true
+
+plugins:
+  - serverless-python-requirements
